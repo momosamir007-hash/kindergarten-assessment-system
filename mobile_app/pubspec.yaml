@@ -42,6 +42,9 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.3
   http: ^1.2.2
+  webview_flutter_android: ^4.3.2
+  file_selector_android: ^0.5.1+12
+  file_selector_platform_interface: ^2.6.2
 
 dev_dependencies:
   flutter_test:

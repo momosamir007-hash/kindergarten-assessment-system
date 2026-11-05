@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { DEFAULT_REPORT_OPTIONS, type ReportOptions } from "@/lib/levels";
-import { fetchFile, printBlob, saveBlob, shareBlob, type FetchedFile } from "@/lib/client";
+import { fetchFile, printBlob, saveBlob, shareBlob, sendToFlutterBridge, type FetchedFile } from "@/lib/client";
 import { Btn, useToast } from "./ui";
 
 const OPTION_LABELS: [keyof ReportOptions, string][] = [
@@ -75,22 +75,34 @@ export function FileActions({ getFile, label = "PDF", preview = true }: { getFil
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <Btn disabled={!!busy} onClick={() => run("dl", (f) => { saveBlob(f); toast(`تم تنزيل ${f.filename}`); })}>{busy === "dl" ? "…" : `⬇ تنزيل ${label}`}</Btn>
-        {preview && <Btn variant="ghost" disabled={!!busy} onClick={() => run("pv", (f) => setPrev({ url: URL.createObjectURL(f.blob), name: f.filename }))}>👁 معاينة</Btn>}
-        {preview && <Btn variant="ghost" disabled={!!busy} onClick={() => run("pr", (f) => printBlob(f))}>🖨 طباعة</Btn>}
-        <Btn variant="ghost" disabled={!!busy} onClick={() => run("sh", async (f) => { if (!(await shareBlob(f))) { saveBlob(f); toast("المشاركة غير مدعومة في هذا المتصفح، تم حفظ الملف بدلًا من ذلك"); } })}>↗ مشاركة</Btn>
+        <Btn disabled={!!busy} onClick={() => run("dl", async (f) => { await saveBlob(f); toast(`تم تنزيل ${f.filename}`); })}>{busy === "dl" ? "…" : `⬇ تنزيل ${label}`}</Btn>
+        {preview && <Btn variant="ghost" disabled={!!busy} onClick={() => run("pv", async (f) => { if (await sendToFlutterBridge("preview", f)) return; setPrev({ url: URL.createObjectURL(f.blob), name: f.filename }); })}>👁 معاينة</Btn>}
+        {preview && <Btn variant="ghost" disabled={!!busy} onClick={() => run("pr", async (f) => { await printBlob(f); })}>🖨 طباعة</Btn>}
+        <Btn variant="ghost" disabled={!!busy} onClick={() => run("sh", async (f) => { if (await sendToFlutterBridge("share", f)) return; if (!(await shareBlob(f))) { await saveBlob(f); toast("المشاركة غير مدعومة في هذا المتصفح، تم حفظ الملف بدلًا من ذلك"); } })}>↗ مشاركة</Btn>
       </div>
       {prev && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/60 p-2 sm:p-6">
-          <div className="mx-auto flex h-full w-full max-w-4xl flex-col rounded-2xl bg-white">
-            <div className="flex items-center justify-between border-b p-2">
+          <div className="mx-auto flex h-full w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-3">
               <b className="truncate px-2 text-sm">{prev.name}</b>
               <div className="flex gap-2">
-                <a href={prev.url} target="_blank" rel="noreferrer" className="rounded-xl border px-3 py-1.5 text-sm">فتح في تبويب</a>
+                <a href={prev.url} target="_blank" rel="noreferrer" className="rounded-xl border px-3 py-1.5 text-xs sm:text-sm hover:bg-slate-50">فتح في تبويب</a>
+                <a href={prev.url} download={prev.name} className="rounded-xl bg-[#0f4c81] px-3 py-1.5 text-xs text-white sm:text-sm">تنزيل</a>
                 <Btn variant="danger" onClick={() => { URL.revokeObjectURL(prev.url); setPrev(null); }}>إغلاق</Btn>
               </div>
             </div>
-            <iframe src={prev.url} className="h-full w-full flex-1 rounded-b-2xl" title="معاينة التقرير" />
+            <object data={prev.url} type="application/pdf" className="h-full w-full flex-1 rounded-b-2xl">
+              <iframe src={prev.url} className="h-full w-full flex-1 rounded-b-2xl" title="معاينة التقرير">
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center text-slate-600">
+                  <p className="mb-2 font-medium">يتعذر عرض ملف الـ PDF مباشرة داخل نافذة هذا المتصفح.</p>
+                  <p className="mb-4 text-xs text-slate-500">يمكنك فتحه في تبويب مستقل أو تنزيله وعرضه في قارئ المستندات.</p>
+                  <div className="flex gap-2">
+                    <a href={prev.url} target="_blank" rel="noreferrer" className="rounded-xl bg-[#0f4c81] px-4 py-2 text-sm text-white">فتح في تبويب جديد ↗</a>
+                    <a href={prev.url} download={prev.name} className="rounded-xl border border-slate-300 px-4 py-2 text-sm">تنزيل الملف ⬇</a>
+                  </div>
+                </div>
+              </iframe>
+            </object>
           </div>
         </div>
       )}

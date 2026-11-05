@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 
 void main() async {
@@ -76,6 +83,12 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFFF8FAFC))
+      ..addJavaScriptChannel(
+        'FlutterBridge',
+        onMessageReceived: (JavaScriptMessage msg) {
+          _handleBridgeMessage(msg.message);
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
@@ -110,7 +123,7 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
                 setState(() {
                   _isLoading = false;
                   _errorMessage =
-                      'تعذر الاتصال بالخادم المحلي (${error.description}).\nتأكد من تشغيل المشروع على الحاسوب بنفس شبكة Wi-Fi.';
+                      'تعذر الاتصال بالخادم (${error.description}).\nتأكد من تشغيل المشروع أو صحة الرابط.';
                 });
               }
             }
@@ -118,7 +131,111 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
         ),
       );
 
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController = _controller.platform as AndroidWebViewController;
+      await androidController.setOnShowFileSelector((FileSelectorParams params) async {
+        try {
+          final List<XFile> files;
+          if (params.mode == FileSelectorMode.openMultiple) {
+            files = await FileSelectorPlatform.instance.openFiles();
+          } else {
+            final file = await FileSelectorPlatform.instance.openFile();
+            files = file != null ? [file] : [];
+          }
+          return files.map((f) => Uri.file(f.path).toString()).toList();
+        } catch (e) {
+          debugPrint('File picker error: $e');
+          return [];
+        }
+      });
+    }
+
     _loadUrl(_currentUrl);
+  }
+
+  Future<void> _handleBridgeMessage(String jsonStr) async {
+    try {
+      final Map<String, dynamic> data = jsonDecode(jsonStr);
+      final String action = data['action'] ?? '';
+      final String filename = data['filename'] ?? 'report.pdf';
+      final String base64Data = data['base64'] ?? '';
+      final Uint8List bytes = base64Decode(base64Data);
+
+      if (action == 'download') {
+        await _handleDownload(filename, bytes);
+      } else if (action == 'share') {
+        await _handleShare(filename, bytes);
+      } else if (action == 'print' || action == 'preview') {
+        await _handlePrintOrPreview(filename, bytes);
+      }
+    } catch (e) {
+      debugPrint('Bridge message error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ في معالجة الملف: $e',
+                style: const TextStyle(fontFamily: 'Roboto')),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDownload(String filename, Uint8List bytes) async {
+    try {
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!dir.existsSync()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+      final file = File('${dir!.path}/$filename');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم حفظ الملف بنجاح:\n$filename'),
+            backgroundColor: const Color(0xFF16A34A),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'مشاركة / فتح',
+              textColor: Colors.white,
+              onPressed: () {
+                Share.shareXFiles([XFile(file.path)], text: filename);
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)], text: filename);
+    }
+  }
+
+  Future<void> _handleShare(String filename, Uint8List bytes) async {
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/$filename');
+    await file.writeAsBytes(bytes);
+    await Share.shareXFiles([XFile(file.path)], text: filename);
+  }
+
+  Future<void> _handlePrintOrPreview(String filename, Uint8List bytes) async {
+    if (filename.toLowerCase().endsWith('.pdf')) {
+      await Printing.layoutPdf(
+        name: filename,
+        onLayout: (format) async => bytes,
+      );
+    } else {
+      await _handleDownload(filename, bytes);
+    }
   }
 
   void _loadUrl(String url) {
@@ -148,10 +265,10 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
-              Icon(Icons.wifi_tethering_rounded, color: Color(0xFF0F4C81)),
+              Icon(Icons.settings_ethernet_rounded, color: Color(0xFF0F4C81)),
               SizedBox(width: 8),
               Text(
-                'عنوان الخادم المحلي (Wi-Fi / Local)',
+                'إعدادات الاتصال (سحابي / محلي)',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
@@ -162,7 +279,7 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'أدخل عنوان IP الخاص بحاسوبك ومنفذ المشروع (3000) للاتصال بالخادم المحلي بدون إنترنت خارجي:',
+                  'أدخل رابط موقعك على Vercel للاتصال بالإنترنت، أو عنوان IP الحاسوب للاتصال المحلي بدون إنترنت:',
                   style: TextStyle(fontSize: 12, color: Colors.black87),
                 ),
                 const SizedBox(height: 12),
@@ -170,8 +287,8 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
                   controller: controller,
                   textDirection: TextDirection.ltr,
                   decoration: const InputDecoration(
-                    labelText: 'عنوان الخادم المحلي',
-                    hintText: 'http://192.168.1.58:3000',
+                    labelText: 'عنوان الخادم أو الرابط',
+                    hintText: 'https://....vercel.app أو http://192.168.1.58:3000',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.link_rounded),
                   ),
@@ -186,7 +303,7 @@ class _LocalWebViewScreenState extends State<LocalWebViewScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _presetChip('http://192.168.1.58:3000', 'شبكة Wi-Fi الحالية',
+                    _presetChip('http://192.168.1.58:3000', 'شبكة Wi-Fi المحلية',
                         controller, setDlgState),
                     _presetChip('http://10.0.2.2:3000', 'المحاكي (Emulator)',
                         controller, setDlgState),
