@@ -1,20 +1,25 @@
-@import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --radius: 1rem;
-  }
+import React from "react";
+import "./globals.css"; // ربط ملف الألوان والتنسيقات
+import { Shell } from "@/components/shell";
 
-  * {
-    border-color: #e2e8f0;
-  }
+export const metadata = {
+  title: "نظام رياض الأطفال",
+  description: "نظام إدارة وتقييم رياض الأطفال",
+};
 
-  body {
-    background-color: #f8fafc;
-    color: #020617;
-    direction: rtl;
-    font-family: 'Cairo', sans-serif;
-  }
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="ar" dir="rtl">
+      <body>
+        <Shell>
+          {children}
+        </Shell>
+      </body>
+    </html>
+  );
 }
