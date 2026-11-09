@@ -6,6 +6,7 @@ import { StudentAvatar } from "./photo-upload";
 import { EvalCircle, EvalLegend, EvalSummaryCards } from "./eval-circles";
 import { Btn } from "./ui";
 import { fetchFile, saveBlob } from "@/lib/client";
+import { sanitizePedagogicalNote } from "@/lib/pedagogical-sanitizer";
 import type { SkillResult, StudentReportData } from "@/lib/report-types";
 
 export function StudentReportView({
@@ -101,7 +102,8 @@ export function StudentReportView({
 
   // Generate warm, humane, highly personalized default summary
   const defaultSummary = React.useMemo(() => {
-    if (aiText?.parentSummary) return aiText.parentSummary;
+    const cleanAi = sanitizePedagogicalNote(aiText?.parentSummary);
+    if (cleanAi) return cleanAi;
     const isFemale = student?.gender === "F";
     const name = student?.fullName ? student.fullName.split(" ")[0] : (isFemale ? "صغيرتنا" : "صغيرنا");
     const topStr = strengths.slice(0, 2).map((s) => s.skillName).join(" و");

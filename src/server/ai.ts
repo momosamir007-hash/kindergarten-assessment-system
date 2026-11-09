@@ -1,5 +1,6 @@
 // Multi-Provider AI Analysis Service for Early Childhood / Preschool Assessment
 import { analyzeClass, analyzeStudent } from "@/lib/analysis";
+import { sanitizePedagogicalNote } from "@/lib/pedagogical-sanitizer";
 import type { ClassReportData, StudentReportData } from "@/lib/report-types";
 import type { AiConfig } from "@/lib/levels";
 import { executeAiCall, AI_PROVIDERS } from "@/lib/ai-providers";
@@ -122,7 +123,7 @@ export async function analyzeStudentAi(
         progressComparison: String(j.progressComparison ?? ""),
         remedialActivities: arr(j.remedialActivities),
         shortTermGoals: arr(j.shortTermGoals),
-        parentSummary: String(j.parentSummary ?? ""),
+        parentSummary: sanitizePedagogicalNote(String(j.parentSummary ?? "")),
         teacherRecommendations: arr(j.teacherRecommendations),
       },
       source: "ai",

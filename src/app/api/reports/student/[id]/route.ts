@@ -3,6 +3,7 @@ import { attachAi, fileResponse, logExport, optionsFrom } from "@/server/exports
 import { buildStudentsData } from "@/server/data";
 import { studentReportPdf } from "@/lib/pdf/reports";
 import { safeName, studentExcel, studentsCsv, studentsJson } from "@/lib/export/files";
+import { sanitizePedagogicalNote } from "@/lib/pedagogical-sanitizer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -20,7 +21,8 @@ export const GET = guarded<IdCtx>(async (req, u, ctx) => {
   const list = await attachAi(u.institutionId, await buildStudentsData(u.institutionId, [id], periodId), periodId);
   const d = list[0];
   if (!d) return bad("التلميذ غير موجود", 404);
-  const customNote = (options as { parentSummary?: string })?.parentSummary || sp.get("note");
+  const rawCustomNote = (options as { parentSummary?: string })?.parentSummary || sp.get("note");
+  const customNote = sanitizePedagogicalNote(rawCustomNote);
   if (customNote) {
     d.aiText = { ...d.aiText, parentSummary: customNote, source: "ai" };
   }

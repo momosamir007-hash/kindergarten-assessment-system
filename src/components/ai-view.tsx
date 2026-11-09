@@ -1,6 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { Badge } from "./ui";
+import { sanitizePedagogicalNote } from "@/lib/pedagogical-sanitizer";
 
 function List({ title, items }: { title: string; items?: string[] }) {
   if (!items || !items.length) return null;
@@ -38,10 +39,10 @@ export function StudentAiView({ c }: { c: Content }): ReactNode {
       <List title="🎲 أفكار وألعاب منزلية ممتعة وداعمة" items={arr(c.remedialActivities)} />
       <List title="🎯 أهداف تحفيزية قريبة" items={arr(c.shortTermGoals)} />
       <List title="💡 توجيهات عملية للمربية" items={arr(c.teacherRecommendations)} />
-      {typeof c.parentSummary === "string" && c.parentSummary && (
+      {typeof c.parentSummary === "string" && sanitizePedagogicalNote(c.parentSummary) && (
         <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs md:text-sm leading-relaxed text-slate-800">
           <b className="text-[#0f4c81] block mb-1">📋 التوجيهات التربوية للأسرة الكريمة: </b>
-          {c.parentSummary}
+          {sanitizePedagogicalNote(c.parentSummary)}
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { analyzeClass, analyzeStudent } from "../analysis";
 import { DEFAULT_REPORT_OPTIONS, type ReportOptions } from "../levels";
+import { sanitizePedagogicalNote } from "../pedagogical-sanitizer";
 import type { ClassReportData, StudentReportData } from "../report-types";
 import { Pdf, type Cell, type HeaderInfo } from "./doc";
 import { PDFDocument, type PDFImage } from "pdf-lib";
@@ -115,7 +116,7 @@ export function renderStudentReport(
       pdf.kv(summaryPairs);
     }
 
-    const noteText = d.aiText?.parentSummary || a.parentSummary;
+    const noteText = sanitizePedagogicalNote(d.aiText?.parentSummary) || a.parentSummary;
 
     pdf.text(`الخلاصة والتوجيهات للأسرة الكريمة: ${noteText}`, {
       size: 7.5,

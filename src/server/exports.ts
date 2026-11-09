@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { aiAnalyses, exportLogs } from "@/db/schema";
 import { disposition } from "@/lib/export/files";
 import { DEFAULT_REPORT_OPTIONS, type ReportOptions } from "@/lib/levels";
+import { sanitizePedagogicalNote } from "@/lib/pedagogical-sanitizer";
 import type { StudentReportData } from "@/lib/report-types";
 import type { StudentAiResult } from "./ai";
 import type { AuthUser } from "./auth";
@@ -62,7 +63,13 @@ export async function attachAi(institutionId: string, list: StudentReportData[],
     const r = latest.get(d.student.id);
     if (!r) continue;
     const c = r.content as unknown as StudentAiResult;
-    d.aiText = { parentSummary: c.parentSummary, goals: c.shortTermGoals, activities: c.remedialActivities, source: "ai" };
+    const cleanParentSummary = sanitizePedagogicalNote(c.parentSummary);
+    d.aiText = {
+      parentSummary: cleanParentSummary || undefined,
+      goals: c.shortTermGoals,
+      activities: c.remedialActivities,
+      source: "ai",
+    };
   }
   return list;
 }
