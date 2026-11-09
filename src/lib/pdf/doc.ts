@@ -120,10 +120,37 @@ export class Pdf {
 
   drawCircleSymbol(x: number, y: number, levelKey: string, r = 4.2) {
     const t = this.theme;
-    if (levelKey === "acquired") {
+    const k = String(levelKey || "").trim().toLowerCase();
+
+    const isNotAcquired =
+      k === "not_acquired" ||
+      k.includes("not_") ||
+      k.includes("non_") ||
+      k.includes("غير") ||
+      k.includes("بداية") ||
+      k.includes("ملاحظ") ||
+      k.includes("لم");
+
+    const isInProgress =
+      !isNotAcquired &&
+      (k === "in_progress" ||
+        k.includes("prog") ||
+        k.includes("طور") ||
+        k.includes("مساعدة") ||
+        k.includes("متوسط"));
+
+    const isAcquired =
+      !isNotAcquired &&
+      !isInProgress &&
+      (k === "acquired" ||
+        (k.includes("acq") && !k.includes("not")) ||
+        (k.includes("مكتسب") && !k.includes("غير")) ||
+        k.includes("استقلال"));
+
+    if (isAcquired) {
       const col = t.useColor ? rgb(0.08, 0.64, 0.29) : rgb(0.15, 0.15, 0.15);
       this.page.drawCircle({ x, y, size: r, color: col });
-    } else if (levelKey === "in_progress") {
+    } else if (isInProgress) {
       const strokeCol = t.useColor ? rgb(0.85, 0.48, 0.05) : rgb(0.35, 0.35, 0.35);
       const fillCol = t.useColor ? rgb(0.96, 0.62, 0.04) : rgb(0.45, 0.45, 0.45);
       this.page.drawCircle({ x, y, size: r, borderColor: strokeCol, borderWidth: 0.9, color: rgb(1, 1, 1) });
@@ -133,8 +160,9 @@ export class Pdf {
         this.page.drawCircle({ x: x + r * 0.25, y, size: r * 0.55, color: fillCol });
       }
     } else {
+      // Empty circle with clear distinct border
       const borderCol = t.useColor ? rgb(0.58, 0.64, 0.72) : rgb(0.55, 0.55, 0.55);
-      this.page.drawCircle({ x, y, size: r, borderColor: borderCol, borderWidth: 0.9, color: rgb(1, 1, 1) });
+      this.page.drawCircle({ x, y, size: r, borderColor: borderCol, borderWidth: 1.0, color: rgb(1, 1, 1) });
     }
   }
 

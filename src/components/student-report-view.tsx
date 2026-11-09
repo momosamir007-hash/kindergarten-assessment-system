@@ -49,8 +49,29 @@ export function StudentReportView({
     let inProgress = 0;
     let notAcquired = 0;
     for (const r of results) {
-      if (r.levelKey === "acquired") acquired++;
-      else if (r.levelKey === "in_progress") inProgress++;
+      const k = String(r.levelKey || "").trim().toLowerCase();
+      const isNot =
+        k === "not_acquired" ||
+        k.includes("not_") ||
+        k.includes("non_") ||
+        k.includes("غير") ||
+        k.includes("بداية") ||
+        k.includes("ملاحظ");
+      const isProg =
+        !isNot &&
+        (k === "in_progress" ||
+          k.includes("prog") ||
+          k.includes("طور") ||
+          k.includes("مساعدة"));
+      const isAcq =
+        !isNot &&
+        !isProg &&
+        (k === "acquired" ||
+          (k.includes("acq") && !k.includes("not")) ||
+          (k.includes("مكتسب") && !k.includes("غير")));
+
+      if (isAcq) acquired++;
+      else if (isProg) inProgress++;
       else notAcquired++;
     }
     return { acquired, inProgress, notAcquired };

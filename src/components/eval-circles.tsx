@@ -14,8 +14,37 @@ export function EvalCircle({
   showLabel?: boolean;
   className?: string;
 }) {
-  const k = String(levelKey || "").toLowerCase();
-  if (k === "acquired" || k.includes("acq") || k.includes("مكتسب")) {
+  const k = String(levelKey || "").trim().toLowerCase();
+
+  // 1. First check if it's "not_acquired" / beginning / under observation
+  const isNotAcquired =
+    k === "not_acquired" ||
+    k.includes("not_") ||
+    k.includes("non_") ||
+    k.includes("غير") ||
+    k.includes("بداية") ||
+    k.includes("ملاحظ") ||
+    k.includes("لم");
+
+  // 2. Then check if it's "in_progress" / with help
+  const isInProgress =
+    !isNotAcquired &&
+    (k === "in_progress" ||
+      k.includes("prog") ||
+      k.includes("طور") ||
+      k.includes("مساعدة") ||
+      k.includes("متوسط"));
+
+  // 3. Then check if it's "acquired" / independent
+  const isAcquired =
+    !isNotAcquired &&
+    !isInProgress &&
+    (k === "acquired" ||
+      (k.includes("acq") && !k.includes("not")) ||
+      (k.includes("مكتسب") && !k.includes("غير")) ||
+      k.includes("استقلال"));
+
+  if (isAcquired) {
     return (
       <div className={`inline-flex items-center gap-1.5 ${className}`}>
         <svg
@@ -31,7 +60,7 @@ export function EvalCircle({
     );
   }
 
-  if (k === "in_progress" || k.includes("prog") || k.includes("طور")) {
+  if (isInProgress) {
     return (
       <div className={`inline-flex items-center gap-1.5 ${className}`}>
         <svg
@@ -41,7 +70,7 @@ export function EvalCircle({
           className="shrink-0 transition-transform hover:scale-110"
         >
           <circle cx="12" cy="12" r="10" fill="#ffffff" stroke="#d97706" strokeWidth="2.4" />
-          {/* Half-filled circle (right half filled in RTL context or right semicircle) */}
+          {/* Half-filled circle */}
           <path d="M 12 2 A 10 10 0 0 1 12 22 Z" fill="#f59e0b" />
         </svg>
         {showLabel && <span className="text-xs font-semibold text-amber-800">في طور الاكتساب (بمساعدة)</span>}
@@ -49,7 +78,7 @@ export function EvalCircle({
     );
   }
 
-  // not_acquired or default
+  // Not Acquired / In observation: completely EMPTY circle with clear visible border
   return (
     <div className={`inline-flex items-center gap-1.5 ${className}`}>
       <svg
@@ -58,7 +87,7 @@ export function EvalCircle({
         viewBox="0 0 24 24"
         className="shrink-0 transition-transform hover:scale-110"
       >
-        <circle cx="12" cy="12" r="9" fill="#ffffff" stroke="#94a3b8" strokeWidth="2.4" />
+        <circle cx="12" cy="12" r="9.5" fill="#ffffff" stroke="#94a3b8" strokeWidth="2.4" />
       </svg>
       {showLabel && <span className="text-xs font-semibold text-slate-600">في بداية الظهور / قيد الملاحظة</span>}
     </div>
