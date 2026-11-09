@@ -99,8 +99,8 @@ export function analyzeStudent(d: StudentReportData): StudentAnalysis {
     const needWork = [...notAcquired, ...needsSupport].slice(0, 2).map((s) => s.skillName).join(" و");
 
     const intro = isFemale
-      ? `تسعدنا مرافقة الغالية ${name} في روضتنا؛ طفلة محبة للاستكشاف ومفعمة بالحيوية والبراءة.`
-      : `يسعدنا مرافقة البطل الصغير ${name} في روضتنا؛ طفل محب للاستكشاف ومفعم بالحيوية والبراءة.`;
+      ? `يسعدنا مشاركة الأسرة الكريمة خطوات الغالية ${name} في روضتنا؛ طفلة محبة للاستكشاف ومفعمة بالحيوية والبراءة.`
+      : `يسعدنا مشاركة الأسرة الكريمة خطوات البطل الصغير ${name} في روضتنا؛ طفل محب للاستكشاف ومفعم بالحيوية والبراءة.`;
 
     const strengthText = topStrengths
       ? ` تجلت خطواته${isFemale ? "ا" : ""} الرائعة وثقته${isFemale ? "ا" : ""} بنفسه${isFemale ? "ا" : ""} في: ${topStrengths}.`
@@ -111,7 +111,7 @@ export function analyzeStudent(d: StudentReportData): StudentAnalysis {
       : ` ويحقق تطوراً متوازناً يبعث على الارتياح والسرور.`;
 
     const tip =
-      " نوصي بجلسات حوار دافئة وقراءة القصص المصورة في البيت مع منحه فرصة الاعتماد على نفسه في مهامه اليومية البسيطة.";
+      " نوصي الأسرة الكريمة بجلسات حوار دافئة وقراءة القصص المصورة في البيت مع منحه فرصة الاعتماد على نفسه في مهامه اليومية البسيطة.";
 
     parentSummary = `${intro}${strengthText}${supportText}${tip}`;
   }

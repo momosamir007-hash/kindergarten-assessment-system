@@ -40,7 +40,7 @@ export function StudentAiView({ c }: { c: Content }): ReactNode {
       <List title="💡 توجيهات عملية للمربية" items={arr(c.teacherRecommendations)} />
       {typeof c.parentSummary === "string" && c.parentSummary && (
         <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs md:text-sm leading-relaxed text-slate-800">
-          <b className="text-[#0f4c81] block mb-1">💌 رسالة المربية للأسرة: </b>
+          <b className="text-[#0f4c81] block mb-1">📋 التوجيهات التربوية للأسرة الكريمة: </b>
           {c.parentSummary}
         </div>
       )}

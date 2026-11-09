@@ -96,7 +96,7 @@ export function renderStudentReport(
 
     const noteText = d.aiText?.parentSummary || a.parentSummary;
 
-    pdf.text(`رسالة المربية والتوجيهات: ${noteText}`, {
+    pdf.text(`الخلاصة والتوجيهات للأسرة الكريمة: ${noteText}`, {
       size: 7.5,
       bold: false,
       color: pdf.theme.muted,

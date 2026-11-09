@@ -87,8 +87,8 @@ export function StudentReportView({
     const needStr = supportAreas.slice(0, 2).map((s) => s.skillName).join(" و");
 
     const intro = isFemale
-      ? `تسعدنا مرافقة الغالية ${name} في روضتنا؛ طفلة مفعمة بالحيوية والبراءة وحب الاكتشاف.`
-      : `يسعدنا مرافقة البطل الصغير ${name} في روضتنا؛ طفل مفعم بالحيوية والبراءة وحب الاكتشاف.`;
+      ? `يسعدنا مشاركة الأسرة الكريمة خطوات الغالية ${name} في روضتنا؛ طفلة مفعمة بالحيوية والبراءة وحب الاكتشاف.`
+      : `يسعدنا مشاركة الأسرة الكريمة خطوات البطل الصغير ${name} في روضتنا؛ طفل مفعم بالحيوية والبراءة وحب الاكتشاف.`;
 
     const strPart = topStr
       ? ` تجلت خطواته${isFemale ? "ا" : ""} الجميلة وثقته${isFemale ? "ا" : ""} بنفسه${isFemale ? "ا" : ""} في: ${topStr}.`
@@ -99,7 +99,7 @@ export function StudentReportView({
       : ` ويحقق تطوراً متوازناً يبعث على الارتياح والسرور.`;
 
     const advice =
-      " نوصي بحوارات يومية دافئة وقراءة قصص ما قبل النوم في البيت، مع تشجيعه على مهامه الذاتية البسيطة بحب وفخر.";
+      " نوصي الأسرة الكريمة بحوارات يومية دافئة وقراءة قصص ما قبل النوم في البيت، مع تشجيعه على مهامه الذاتية البسيطة بحب وفخر.";
 
     return `${intro}${strPart}${suppPart}${advice}`;
   }, [aiText?.parentSummary, student?.fullName, student?.gender, strengths, supportAreas]);
@@ -143,19 +143,19 @@ export function StudentReportView({
   const isFemale = student?.gender === "F";
   const name = student?.fullName ? student.fullName.split(" ")[0] : (isFemale ? "صغيرتنا" : "صغيرنا");
 
-  // Inspirational quick presets for teachers
+  // Inspirational quick presets for teachers (respectful and addressed to the family)
   const presets = [
     {
       label: "🌟 حيوية واستكشاف ومبادرة",
-      text: `يسعدنا مرافقة ${name}؛ طفل مفعم بالحيوية والمبادرة وحب الاستكشاف والتعبير الشفوي. خطواته في التفاعل مع رفاقه رائعة جداً، ونواصل معاً تعزيز تركيزه واستقلاليته عبر اللعب الهادف وحكايات ما قبل النوم.`,
+      text: `يسعدنا مشاركة الأسرة الكريمة خطوات ${name} المليئة بالحيوية والمبادرة وحب الاستكشاف والتعبير الشفوي. خطواته في التفاعل مع رفاقه رائعة ومحفزة، ونواصل معاً تعزيز تركيزه واستقلاليته عبر اللعب الهادف وحكايات ما قبل النوم.`,
     },
     {
       label: "🌿 هدوء وتركيز وخطوات واعدة",
-      text: `يتميز ${name} بهدوء جميل وملاحظة دقيقة أثناء الأنشطة الحسية والقصصية. خطواته في التعبير والمشاركة في تطور مستمر ومبهج، ونشجعه بحب على إبداء آرائه والتحدث بحرية في البيت والمدرسة.`,
+      text: `يتميز ${name} بهدوء جميل وملاحظة دقيقة أثناء الأنشطة الحسية والقصصية. خطواته في التعبير والمشاركة في تطور مستمر ومبهج، ونوصي الأسرة الكريمة بمواصلة دعمه وتشجيعه على التحدث وإبداء رأيه بحرية وثقة.`,
     },
     {
       label: "🎨 خيال وإبداع وتآلف اجتماعي",
-      text: `يبدي ${name} خيالاً واسعاً وشغفاً جميلاً بالألوان والتشكيل والأنشطة التعبيرية. نرافقه بحنان لترسيخ عادات النظام والاستقلالية، وبمزيد من التشجيع الأسري الدافئ ستتفتح مواهبه بثقة وسعادة.`,
+      text: `يبدي ${name} خيالاً واسعاً وشغفاً جميلاً بالألوان والتشكيل والأنشطة التعبيرية. نرافقه باهتمام لترسيخ عادات النظام والاعتماد على الذات، وبمزيد من التشجيع الأسري الدافئ ستتفتح مواهبه بثقة وسعادة.`,
     },
   ];
 
@@ -361,14 +361,14 @@ export function StudentReportView({
           <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5 space-y-2 relative group">
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <span>💌 الخلاصة والتوجيهات التربوية (رسالة المربية للأسرة):</span>
+                <span>📋 الخلاصة والتوجيهات التربوية للأسرة الكريمة:</span>
               </div>
               {!isEditing && (
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
                   className="print:hidden flex items-center gap-1 text-[11px] font-bold text-[#0f4c81] hover:underline bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs cursor-pointer"
-                  title="تخصيص رسالة المعلم للطفل"
+                  title="تخصيص التوجيهات التربوية للأسرة"
                 >
                   <Edit3 size={12} />
                   <span>تعديل الملاحظة</span>
@@ -383,7 +383,7 @@ export function StudentReportView({
                   rows={4}
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  placeholder="اكتب رسالتك الدافئة للطفل وولي أمره هنا..."
+                  placeholder="اكتب التوجيهات التربوية الكريمة للأسرة هنا..."
                 />
 
                 <div className="space-y-1.5">
