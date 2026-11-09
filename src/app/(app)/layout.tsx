@@ -1,6 +1,14 @@
-import type { ReactNode } from "react";
-import Shell from "@/components/shell";
+import React from "react";
+import { Shell } from "@/components/shell";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
-  return <Shell>{children}</Shell>;
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Shell>
+      {children}
+    </Shell>
+  );
 }
