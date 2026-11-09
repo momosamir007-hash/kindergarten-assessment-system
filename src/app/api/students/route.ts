@@ -16,7 +16,7 @@ export const GET = guarded(async (req, u) => {
   const q = sp.get("q")?.trim();
   if (q) conds.push(or(ilike(students.fullName, `%${q}%`), ilike(students.nationalId, `%${q}%`))!);
   const rows = await db
-    .select({ id: students.id, fullName: students.fullName, birthDate: students.birthDate, gender: students.gender, nationalId: students.nationalId, classId: students.classId, className: classes.name, notes: students.notes, active: students.active })
+    .select({ id: students.id, fullName: students.fullName, birthDate: students.birthDate, gender: students.gender, nationalId: students.nationalId, classId: students.classId, className: classes.name, notes: students.notes, photo: students.photo, active: students.active })
     .from(students)
     .leftJoin(classes, eq(classes.id, students.classId))
     .where(and(...conds));
@@ -46,6 +46,7 @@ export const POST = guarded(async (req, u) => {
       gender: n.data.gender,
       nationalId: n.data.nationalId || null,
       notes: n.data.notes,
+      photo: b.photo ? String(b.photo) : null,
       extra: (b.extra && typeof b.extra === "object" ? b.extra : {}) as Record<string, unknown>,
     })
     .returning();

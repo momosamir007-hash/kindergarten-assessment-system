@@ -72,6 +72,7 @@ export const students = pgTable(
     gender: text("gender"), // M | F
     nationalId: text("national_id"),
     notes: text("notes").notNull().default(""),
+    photo: text("photo"), // data URL (jpg/png/webp) or relative path
     extra: jsonb("extra").$type<Record<string, unknown>>().notNull().default({}),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -20,6 +20,7 @@ function ensureSchema(client: PGlite) {
       const sql = fs.readFileSync(sqlPath, "utf-8");
       client.exec(sql).catch(() => {});
     }
+    client.exec("ALTER TABLE students ADD COLUMN IF NOT EXISTS photo text;").catch(() => {});
   } catch {}
 }
 

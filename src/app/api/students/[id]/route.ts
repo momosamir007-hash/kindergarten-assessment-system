@@ -36,6 +36,7 @@ export const PATCH = guarded<IdCtx>(async (req, u, ctx) => {
   }
   if ("classId" in b) set.classId = b.classId || null;
   if ("notes" in b) set.notes = String(b.notes ?? "");
+  if ("photo" in b) set.photo = b.photo ? String(b.photo) : null;
   if ("active" in b) set.active = !!b.active;
   if ("extra" in b && b.extra && typeof b.extra === "object") set.extra = b.extra;
   if (!Object.keys(set).length) return bad("لا توجد تغييرات");

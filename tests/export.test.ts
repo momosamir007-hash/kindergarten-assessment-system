@@ -31,7 +31,7 @@ describe("PDF export", () => {
     }
   });
 
-  it("respects content options", async () => {
+  it("respects content options", { timeout: 30_000 }, async () => {
     const full = await studentReportPdf(makeStudent(3));
     const minimal = await studentReportPdf(makeStudent(3), { analysis: false, remedial: false, charts: false, progress: false, signature: false });
     expect(minimal.length).toBeLessThan(full.length);

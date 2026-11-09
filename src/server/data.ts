@@ -179,7 +179,7 @@ export async function buildStudentsData(institutionId: string, studentIds: strin
     const cls = st.classId ? clsMap.get(st.classId) : undefined;
     out.push({
       institution: { name: inst.name, academicYear: inst.academicYear, city: inst.city, logo: inst.logo, signatureLabel: settings.teacherSignatureLabel },
-      student: { id: st.id, fullName: st.fullName, birthDate: st.birthDate, gender: st.gender, nationalId: st.nationalId, className: cls?.name ?? "", level: cls?.level ?? "", notes: st.notes },
+      student: { id: st.id, fullName: st.fullName, birthDate: st.birthDate, gender: st.gender, nationalId: st.nationalId, className: cls?.name ?? "", level: cls?.level ?? "", notes: st.notes, photo: st.photo ?? ((st.extra as Record<string, unknown>)?.photo as string | null) ?? null },
       periodName,
       levels: settings.levels,
       results,

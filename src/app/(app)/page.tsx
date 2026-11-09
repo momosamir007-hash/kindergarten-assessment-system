@@ -1,76 +1,191 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Button } from "@/components/ui";
+import {
+  Users,
+  CheckCircle2,
+  TrendingUp,
+  FileText,
+  UserPlus,
+  ClipboardCheck,
+  Sparkles,
+  ArrowRight,
+  BookOpen,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, Btn, Spinner, useApiData, useApp } from "@/components/ui";
 
-const Icons = {
-  Users: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  CheckCircle: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-  TrendingUp: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-  FileText: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+type DashboardStats = {
+  studentCount: number;
+  classCount: number;
+  evalCount: number;
+  class?: {
+    className: string;
+    students: { id: string; evaluated: number }[];
+  } | null;
+  progress?: { name: string; avg: number }[];
 };
 
-export default async function DashboardPage() {
-  const stats = { students: 120, evaluations: 450, completion: "85%" };
+export default function DashboardPage() {
+  const { classId, periodId } = useApp();
+  const url = `/api/dashboard${classId ? `?classId=${classId}${periodId ? `&periodId=${periodId}` : ""}` : ""}`;
+  const { data, loading } = useApiData<DashboardStats>(url, [classId, periodId]);
+
+  const studentsCount = data?.studentCount ?? 0;
+  const evalsCount = data?.evalCount ?? 0;
+  const classesCount = data?.classCount ?? 0;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">مرحباً بك في لوحة التحكم</h1>
-        <p className="text-slate-500 mt-1">نظرة عامة على نشاط النظام والتقييمات الحديثة.</p>
+    <div className="space-y-6">
+      {/* Welcome Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl bg-gradient-to-l from-[#0f4c81] to-[#1e6bb8] p-6 md:p-8 text-white shadow-xs">
+        <div className="space-y-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-xs">
+            ✨ نظام الملاحظة والتقييم النمائي الشامل
+          </span>
+          <h1 className="text-xl md:text-3xl font-black tracking-tight">
+            مرحباً بك في لوحة المتابعة التربوية
+          </h1>
+          <p className="text-xs md:text-sm text-blue-100 max-w-xl leading-relaxed">
+            متابعة دقيقة لمكتسبات الأطفال، دفاتر التقييم الفردية، والتقارير الشاملة وفق أسس التربية التحضيرية والطفولة المبكرة.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap sm:flex-col gap-2 shrink-0">
+          <Link href="/students/new">
+            <Btn variant="secondary" className="w-full text-xs md:text-sm bg-white text-[#0f4c81] hover:bg-blue-50 font-bold shadow-xs">
+              <UserPlus size={16} />
+              <span>تسجيل طفل(ة) جديد</span>
+            </Btn>
+          </Link>
+          <Link href="/class-eval">
+            <Btn variant="outline" className="w-full text-xs md:text-sm border-white/30 text-white hover:bg-white/10 font-bold">
+              <ClipboardCheck size={16} />
+              <span>بدء جلسة تقييم</span>
+            </Btn>
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      {loading && !data && <Spinner label="جارٍ تحميل مؤشرات النشاط..." />}
+
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="hover:border-blue-200 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">إجمالي التلاميذ</CardTitle>
-            <div className="text-blue-600"><Icons.Users /></div>
+            <CardTitle className="text-xs md:text-sm font-bold text-slate-500">إجمالي الأطفال المسجلين</CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#0f4c81]">
+              <Users size={18} />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.students}</div>
+            <div className="text-3xl font-black text-slate-900">{studentsCount}</div>
+            <p className="mt-1 text-[11px] font-semibold text-slate-400">
+              موزعون على {classesCount} أفواج / أقسام
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:border-emerald-200 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">التقييمات المنجزة</CardTitle>
-            <div className="text-emerald-500"><Icons.CheckCircle /></div>
+            <CardTitle className="text-xs md:text-sm font-bold text-slate-500">التقييمات والملاحظات المرصودة</CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <CheckCircle2 size={18} />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.evaluations}</div>
+            <div className="text-3xl font-black text-slate-900">{evalsCount}</div>
+            <p className="mt-1 text-[11px] font-semibold text-emerald-600">
+              سجل تراكمي محفوظ لا يُحذف
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:border-indigo-200 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">نسبة الاكتمال</CardTitle>
-            <div className="text-indigo-500"><Icons.TrendingUp /></div>
+            <CardTitle className="text-xs md:text-sm font-bold text-slate-500">الأقسام التربوية</CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <BookOpen size={18} />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.completion}</div>
+            <div className="text-3xl font-black text-slate-900">{classesCount}</div>
+            <p className="mt-1 text-[11px] font-semibold text-slate-400">
+              فوج / قسم تحضيري
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>إجراءات سريعة</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-4">
-            <Link href="/students/new" className="flex-1 block">
-              <Button className="w-full h-12 text-base">
-                <Icons.Users />
-                إضافة تلميذ جديد
-              </Button>
-            </Link>
-            <Link href="/class-eval" className="flex-1 block">
-              <Button variant="outline" className="w-full h-12 text-base">
-                <Icons.FileText />
-                بدء جلسة تقييم
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      {/* Quick Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link href="/class-eval" className="block group">
+          <Card className="h-full group-hover:border-blue-400 group-hover:shadow-sm transition-all p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0f4c81] group-hover:bg-[#0f4c81] group-hover:text-white transition-colors shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-slate-800 flex items-center gap-1">
+                  <span>شبكة التقييم</span>
+                  <ArrowRight size={14} className="text-slate-300 group-hover:text-[#0f4c81] group-hover:translate-x-[-2px] transition-all" />
+                </div>
+                <div className="text-xs text-slate-400 truncate">رصد ملاحظات الفوج كاملاً</div>
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link href="/reports" className="block group">
+          <Card className="h-full group-hover:border-emerald-400 group-hover:shadow-sm transition-all p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors shrink-0">
+                <FileText size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-slate-800 flex items-center gap-1">
+                  <span>التقارير والدفاتر</span>
+                  <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-[-2px] transition-all" />
+                </div>
+                <div className="text-xs text-slate-400 truncate">تقرير A4 فردي ومجمّع</div>
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link href="/progress" className="block group">
+          <Card className="h-full group-hover:border-indigo-400 group-hover:shadow-sm transition-all p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
+                <TrendingUp size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-slate-800 flex items-center gap-1">
+                  <span>المسار النمائي</span>
+                  <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-[-2px] transition-all" />
+                </div>
+                <div className="text-xs text-slate-400 truncate">تطور الكفاءات عبر الفترات</div>
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link href="/ai" className="block group">
+          <Card className="h-full group-hover:border-purple-400 group-hover:shadow-sm transition-all p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors shrink-0">
+                <Sparkles size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-slate-800 flex items-center gap-1">
+                  <span>التوجيه الذكي</span>
+                  <ArrowRight size={14} className="text-slate-300 group-hover:text-purple-600 group-hover:translate-x-[-2px] transition-all" />
+                </div>
+                <div className="text-xs text-slate-400 truncate">اقتراحات الدعم والمعالجة</div>
+              </div>
+            </div>
+          </Card>
+        </Link>
       </div>
     </div>
   );

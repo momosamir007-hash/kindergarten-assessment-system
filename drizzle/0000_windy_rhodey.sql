@@ -122,6 +122,7 @@ CREATE TABLE "students" (
 	"gender" text,
 	"national_id" text,
 	"notes" text DEFAULT '' NOT NULL,
+	"photo" text,
 	"extra" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL

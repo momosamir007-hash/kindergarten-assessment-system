@@ -32,6 +32,7 @@ export type StudentInfo = {
   className: string;
   level: string;
   notes?: string;
+  photo?: string | null;
 };
 
 export type ProgressPoint = {

@@ -60,7 +60,7 @@ export function hexToRgb(hex: string): RGB {
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
-export type Cell = string | { text: string; color?: string; bold?: boolean };
+export type Cell = string | { text: string; color?: string; bold?: boolean; circle?: string };
 
 export type HeaderInfo = {
   name: string;
@@ -100,6 +100,42 @@ export class Pdf {
     p.header = header;
     if (firstPage) p.beginSection(header, "");
     return p;
+  }
+
+  async embedImage(dataUrl?: string | null): Promise<PDFImage | null> {
+    if (!dataUrl) return null;
+    try {
+      const m = /^data:image\/(png|jpe?g|webp);base64,(.+)$/i.exec(dataUrl);
+      if (!m) return null;
+      const bytes = Buffer.from(m[2], "base64");
+      if (m[1].toLowerCase() === "png") {
+        return await this.doc.embedPng(bytes);
+      } else {
+        return await this.doc.embedJpg(bytes);
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  drawCircleSymbol(x: number, y: number, levelKey: string, r = 4.2) {
+    const t = this.theme;
+    if (levelKey === "acquired") {
+      const col = t.useColor ? rgb(0.08, 0.64, 0.29) : rgb(0.15, 0.15, 0.15);
+      this.page.drawCircle({ x, y, size: r, color: col });
+    } else if (levelKey === "in_progress") {
+      const strokeCol = t.useColor ? rgb(0.85, 0.48, 0.05) : rgb(0.35, 0.35, 0.35);
+      const fillCol = t.useColor ? rgb(0.96, 0.62, 0.04) : rgb(0.45, 0.45, 0.45);
+      this.page.drawCircle({ x, y, size: r, borderColor: strokeCol, borderWidth: 0.9, color: rgb(1, 1, 1) });
+      try {
+        this.page.drawSvgPath(`M ${x} ${y - r} A ${r} ${r} 0 0 1 ${x} ${y + r} Z`, { color: fillCol });
+      } catch {
+        this.page.drawCircle({ x: x + r * 0.25, y, size: r * 0.55, color: fillCol });
+      }
+    } else {
+      const borderCol = t.useColor ? rgb(0.58, 0.64, 0.72) : rgb(0.55, 0.55, 0.55);
+      this.page.drawCircle({ x, y, size: r, borderColor: borderCol, borderWidth: 0.9, color: rgb(1, 1, 1) });
+    }
   }
 
   private async setLogo(dataUrl?: string | null) {
@@ -284,6 +320,13 @@ export class Pdf {
         this.page.drawLine({ start: { x: cr - colW[i], y: this.y }, end: { x: cr - colW[i], y: this.y + h }, thickness: 0.4, color: t.border });
       });
       cells.forEach((c, i) => {
+        const circleKey = (c as { circle?: string }).circle;
+        if (circleKey) {
+          const cx = colRight[i] - colW[i] / 2;
+          const cy = this.y + h / 2;
+          this.drawCircleSymbol(cx, cy, circleKey, 4);
+          return;
+        }
         const col = c.color && t.useColor ? hexToRgb(c.color) : t.text;
         wrapped[i].forEach((ln, li) =>
           drawLine(this.page, ln, this.fonts, colRight[i] - colW[i] + pad, colRight[i] - pad, this.y + h - lh - li * lh + 2.5, {
@@ -368,6 +411,141 @@ export class Pdf {
     const w = 180;
     this.page.drawRectangle({ x: this.left, y: this.y, width: w, height: 50, borderColor: t.border, borderWidth: 0.6 });
     drawLine(this.page, label, this.fonts, this.left, this.left + w - 6, this.y + 38, { size: 9, bold: true, color: t.muted });
+  }
+
+  drawDualSignatures(teacherLabel = "توقيع وملاحظة المربية/المعلم") {
+    this.ensure(55);
+    this.gap(6);
+    const t = this.theme;
+    const w = (this.right - this.left - 20) / 2;
+    const h = 44;
+    this.y -= h;
+
+    // Right box: Teacher signature
+    const rx = this.right - w;
+    this.page.drawRectangle({ x: rx, y: this.y, width: w, height: h, borderColor: t.border, borderWidth: 0.6, color: t.zebra ?? undefined });
+    drawLine(this.page, teacherLabel, this.fonts, rx + 4, rx + w - 6, this.y + h - 13, { size: 8, bold: true, color: t.muted, align: "center" });
+    this.page.drawLine({ start: { x: rx + 20, y: this.y + 12 }, end: { x: rx + w - 20, y: this.y + 12 }, thickness: 0.4, color: t.border, dashArray: [2, 2] });
+
+    // Left box: Guardian signature
+    const lx = this.left;
+    this.page.drawRectangle({ x: lx, y: this.y, width: w, height: h, borderColor: t.border, borderWidth: 0.6, color: t.zebra ?? undefined });
+    drawLine(this.page, "ملاحظة وتوقيع ولي الأمر", this.fonts, lx + 4, lx + w - 6, this.y + h - 13, { size: 8, bold: true, color: t.muted, align: "center" });
+    this.page.drawLine({ start: { x: lx + 20, y: this.y + 12 }, end: { x: lx + w - 20, y: this.y + 12 }, thickness: 0.4, color: t.border, dashArray: [2, 2] });
+    this.gap(4);
+  }
+
+  drawStudentHeaderCard(info: { fullName: string; className?: string; level?: string; birthDate?: string | null; nationalId?: string | null }, photoImg: PDFImage | null) {
+    const t = this.theme;
+    const cardH = 46;
+    this.ensure(cardH + 10);
+    this.y -= cardH;
+    const totalW = this.right - this.left;
+
+    // Background card
+    this.page.drawRectangle({
+      x: this.left,
+      y: this.y,
+      width: totalW,
+      height: cardH,
+      borderColor: t.border,
+      borderWidth: 0.7,
+      color: t.boxFill ?? undefined,
+    });
+
+    // Draw Photo on the right side
+    const photoSize = 38;
+    const photoRight = this.right - 5;
+    const photoX = photoRight - photoSize;
+    const photoY = this.y + (cardH - photoSize) / 2;
+
+    if (photoImg) {
+      this.page.drawImage(photoImg, { x: photoX, y: photoY, width: photoSize, height: photoSize });
+      this.page.drawRectangle({ x: photoX, y: photoY, width: photoSize, height: photoSize, borderColor: t.primary, borderWidth: 0.8 });
+    } else {
+      // Default sleek avatar box
+      this.page.drawRectangle({ x: photoX, y: photoY, width: photoSize, height: photoSize, color: rgb(0.9, 0.94, 0.98), borderColor: t.border, borderWidth: 0.6 });
+      this.page.drawCircle({ x: photoX + photoSize / 2, y: photoY + photoSize * 0.62, size: photoSize * 0.22, color: t.primary });
+      this.page.drawCircle({ x: photoX + photoSize / 2, y: photoY + photoSize * 0.2, size: photoSize * 0.32, color: t.primary });
+    }
+
+    // Text details (to the left of the photo)
+    const textRight = photoX - 10;
+    const textLeft = this.left + 8;
+
+    // Full name in bold
+    drawLine(this.page, info.fullName, this.fonts, textLeft, textRight, this.y + 27, { size: 12, bold: true, color: t.primary });
+
+    // Details row
+    const subText = `القسم: ${info.className || "—"}  |  المستوى: ${info.level || "التحضيري"}${info.birthDate ? `  |  الميلاد: ${info.birthDate}` : ""}${info.nationalId ? `  |  التعريف: ${info.nationalId}` : ""}`;
+    drawLine(this.page, subText, this.fonts, textLeft, textRight, this.y + 11, { size: 8, color: t.text });
+    this.gap(4);
+  }
+
+  drawSummaryCounters(counts: { acquired: number; inProgress: number; notAcquired: number }) {
+    const t = this.theme;
+    const boxH = 26;
+    this.ensure(boxH + 6);
+    this.y -= boxH;
+    const totalW = this.right - this.left;
+    const gap = 8;
+    const colW = (totalW - gap * 2) / 3;
+
+    const items = [
+      { label: "مكتسب باستقلالية", count: counts.acquired, col: t.useColor ? rgb(0.08, 0.64, 0.29) : rgb(0.2, 0.2, 0.2), bg: t.useColor ? rgb(0.92, 0.98, 0.94) : undefined },
+      { label: "في طور الاكتساب (بمساعدة)", count: counts.inProgress, col: t.useColor ? rgb(0.85, 0.48, 0.05) : rgb(0.35, 0.35, 0.35), bg: t.useColor ? rgb(0.99, 0.96, 0.9) : undefined },
+      { label: "في بداية الظهور / قيد الملاحظة", count: counts.notAcquired, col: t.useColor ? rgb(0.5, 0.55, 0.6) : rgb(0.5, 0.5, 0.5), bg: t.useColor ? rgb(0.96, 0.97, 0.98) : undefined },
+    ];
+
+    items.forEach((it, i) => {
+      const xr = this.right - i * (colW + gap);
+      const xl = xr - colW;
+      this.page.drawRectangle({ x: xl, y: this.y, width: colW, height: boxH, color: it.bg, borderColor: it.col, borderWidth: 0.7 });
+      // Count
+      drawLine(this.page, String(it.count), this.fonts, xl + 6, xl + 36, this.y + 7, { size: 13, bold: true, color: it.col, align: "center" });
+      // Label
+      drawLine(this.page, it.label, this.fonts, xl + 38, xr - 6, this.y + 8, { size: 7.5, bold: true, color: t.text });
+    });
+    this.gap(4);
+  }
+
+  drawLegendBar() {
+    const t = this.theme;
+    const barH = 16;
+    this.ensure(barH + 4);
+    this.y -= barH;
+    const totalW = this.right - this.left;
+
+    this.page.drawRectangle({
+      x: this.left,
+      y: this.y,
+      width: totalW,
+      height: barH,
+      color: t.zebra ?? rgb(0.97, 0.97, 0.98),
+      borderColor: t.border,
+      borderWidth: 0.5,
+    });
+
+    const cy = this.y + 8;
+    const totalCols = 3;
+    const colW = totalW / totalCols;
+
+    // Item 1: Acquired
+    const r1 = this.right - 14;
+    this.drawCircleSymbol(r1, cy, "acquired", 3.8);
+    drawLine(this.page, "مكتسب باستقلالية", this.fonts, this.right - colW + 4, r1 - 8, this.y + 4.5, { size: 7.5, bold: true, color: t.text });
+
+    // Item 2: In progress
+    const r2 = this.right - colW - 14;
+    this.drawCircleSymbol(r2, cy, "in_progress", 3.8);
+    drawLine(this.page, "في طور الاكتساب (بمساعدة)", this.fonts, this.right - colW * 2 + 4, r2 - 8, this.y + 4.5, { size: 7.5, bold: true, color: t.text });
+
+    // Item 3: In observation
+    const r3 = this.right - colW * 2 - 14;
+    this.drawCircleSymbol(r3, cy, "not_acquired", 3.8);
+    drawLine(this.page, "في بداية الظهور / قيد الملاحظة", this.fonts, this.left + 4, r3 - 8, this.y + 4.5, { size: 7.5, bold: true, color: t.text });
+
+    this.gap(4);
   }
 
   note(text: string) {
