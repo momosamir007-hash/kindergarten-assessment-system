@@ -1,37 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* bg-slate-50 */
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
-    
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    
-    --primary: 221.2 83.2% 53.3%; /* blue-600 */
-    --primary-foreground: 210 40% 98%;
-    
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    
-    --radius: 1rem; /* حواف ناعمة Premium */
+    --radius: 1rem;
   }
 
   * {
-    @apply border-slate-200;
+    border-color: #e2e8f0;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900;
-    direction: rtl; /* دعم العربية افتراضياً */
+    background-color: #f8fafc;
+    color: #020617;
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
   }
 }
