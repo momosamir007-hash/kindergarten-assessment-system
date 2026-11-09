@@ -1,77 +1,95 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, Button } from "@/components/ui";
-import { Users, FileText, CheckCircle, TrendingUp } from "lucide-react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { 
+  LayoutDashboard, 
+  Users, 
+  CheckSquare, 
+  FileBarChart, 
+  UploadCloud, 
+  Settings, 
+  Menu, 
+  X 
+} from "lucide-react";
+import { Button } from "./ui";
 
-// افتراض وجود الدوال المنطقية لجلب البيانات كما هي في النظام الأصلي
-// import { getDashboardStats } from "@/lib/data";
+const navigation = [
+  { name: "لوحة التحكم", href: "/", icon: LayoutDashboard },
+  { name: "التلاميذ", href: "/students", icon: Users },
+  { name: "التقييم", href: "/class-eval", icon: CheckSquare },
+  { name: "التقارير", href: "/reports", icon: FileBarChart },
+  { name: "الاستيراد", href: "/import", icon: UploadCloud },
+  { name: "الإعدادات", href: "/settings", icon: Settings },
+];
 
-export default async function DashboardPage() {
-  // const stats = await getDashboardStats();
-
-  // بيانات توضيحية لتعويض استدعاء قاعدة البيانات في هذا المثال
-  const stats = { students: 120, evaluations: 450, completion: "85%" };
+export function Shell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">مرحباً بك في لوحة التحكم</h1>
-        <p className="text-slate-500 mt-1">نظرة عامة على نشاط النظام والتقييمات الحديثة.</p>
-      </div>
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">إجمالي التلاميذ</CardTitle>
-            <Users className="h-5 w-5 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.students}</div>
-          </CardContent>
-        </Card>
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 w-64 transform bg-white border-l border-slate-200 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 items-center justify-between px-6 border-b border-slate-100">
+          <span className="text-lg font-bold text-slate-800">نظام رياض الأطفال</span>
+          <Button variant="ghost" className="lg:hidden p-1 h-8 w-8" onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </Button>
+        </div>
+        
+        <nav className="flex flex-col gap-1 p-4">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700 shadow-sm"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <Icon size={20} className={isActive ? "text-blue-600" : "text-slate-400"} />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">التقييمات المنجزة</CardTitle>
-            <CheckCircle className="h-5 w-5 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.evaluations}</div>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Mobile Header */}
+        <header className="flex lg:hidden h-16 items-center justify-between bg-white px-4 border-b border-slate-200 shadow-sm">
+          <span className="text-lg font-bold text-slate-800">الرئيسية</span>
+          <Button variant="ghost" className="p-2 h-10 w-10" onClick={() => setSidebarOpen(true)}>
+            <Menu size={24} />
+          </Button>
+        </header>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">نسبة الاكتمال</CardTitle>
-            <TrendingUp className="h-5 w-5 text-indigo-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900">{stats.completion}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>إجراءات سريعة</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-4">
-            <Link href="/students/new" className="flex-1">
-              <Button className="w-full">
-                <Users size={18} />
-                إضافة تلميذ جديد
-              </Button>
-            </Link>
-            <Link href="/class-eval" className="flex-1">
-              <Button variant="outline" className="w-full">
-                <FileText size={18} />
-                بدء جلسة تقييم
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="flex-1 overflow-auto p-4 md:p-8">
+          <div className="mx-auto max-w-6xl">
+            {children}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
