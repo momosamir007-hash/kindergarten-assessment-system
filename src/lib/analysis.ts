@@ -39,15 +39,29 @@ export function pctByKind(results: SkillResult[], kind: "academic" | "behavioral
   return avg(results.filter((r) => r.kind === kind).map((r) => r.percent));
 }
 
-function activityFor(skill: SkillResult, severe: boolean): string {
-  if (skill.kind === "behavioral") {
-    return severe
-      ? `تخصيص أنشطة لعب جماعي وأدوار تمثيلية هادفة لتعزيز «${skill.skillName}» مع تشجيع لفظي إيجابي فوري.`
-      : `تحفيز الطفل على ممارسة «${skill.skillName}» ضمن ألعاب الفوج والمشاركة الودية.`;
+function activityFor(skill: SkillResult, _severe: boolean): string {
+  const sk = skill.skillName;
+  const sub = skill.subjectName;
+
+  if (skill.kind === "behavioral" || sub.includes("اجتماع") || sub.includes("ذات") || sub.includes("حرك")) {
+    if (sk.includes("حرك") || sk.includes("أصابع") || sk.includes("عجين") || sk.includes("قلم") || sk.includes("رسم") || sk.includes("تلوين")) {
+      return `مشاركة الطفل في اللعب بالعجين الملون، تقطيع أوراق الجرائد بالأصابع، أو رص المكعبات لصقل عضلات اليدين بمرح.`;
+    }
+    if (sk.includes("معطف") || sk.includes("حذاء") || sk.includes("نظاف") || sk.includes("أدوات") || sk.includes("استقلال")) {
+      return `منحه فرصة ارتداء حذائه أو ترتيب ألعابه بنفسه في البيت مع تشجيعه بابتسامة وكلمات فخر لطيفة.`;
+    }
+    return `مشاركته ألعاباً تفاعلية هادئة في البيت، وتشجيعه على تبادل الأدوار والتعبير عن مشاعره بحرية وأمان.`;
   }
-  return severe
-    ? `نشاط لعب موجّه وحسي لدعم «${skill.skillName}» (في مجال ${skill.subjectName}) بالانطلاق من المحسوسات والمجسمات وخامات البيئة.`
-    : `ألعاب تفاعلية ومحاكاة ممتعة لصقل «${skill.skillName}» (${skill.subjectName}) مع ملاحظة تطوره برفق.`;
+
+  // Academic / Cognitive / Language
+  if (sub.includes("لغ") || sk.includes("تعبير") || sk.includes("صوت") || sk.includes("استماع") || sk.includes("قصة")) {
+    return `جلسة دافئة لقراءة قصة مصورة قبل النوم، وسؤاله عن أبطالها وتشجيعه على إعادة سرد أحداثها بكلماته البريئة.`;
+  }
+  if (sub.includes("استكشاف") || sub.includes("رياض") || sk.includes("فرز") || sk.includes("أشكال") || sk.includes("عد")) {
+    return `لعبة البحث الممتعة في البيت (مثل جمع 3 ملاعق متشابهة، أو فرز الفواكه حسب ألوانها أثناء تحضير الطعام).`;
+  }
+
+  return `أنشطة استكشافية حرة ولعب حسي يومي يتيح له التعبير عن خياله والتعلم عبر التجربة الدافئة.`;
 }
 
 export function analyzeStudent(d: StudentReportData): StudentAnalysis {
@@ -63,9 +77,9 @@ export function analyzeStudent(d: StudentReportData): StudentAnalysis {
     ...notAcquired.map((s) => ({ skill: s.skillName, activity: activityFor(s, true) })),
     ...needsSupport.map((s) => ({ skill: s.skillName, activity: activityFor(s, false) })),
   ];
-  const goals = notAcquired.slice(0, 3).map((s) => `بلوغ مستوى «في طور الاكتساب» في مهارة: ${s.skillName} عبر اللعب والأنشطة اليومية`);
+  const goals = notAcquired.slice(0, 3).map((s) => `تشجيع فضول الطفل في «${s.skillName}» عبر اللعب التشاركي الهادف`);
   if (!goals.length && needsSupport.length) {
-    goals.push(...needsSupport.slice(0, 3).map((s) => `تثبيت مهارة: ${s.skillName} ليصل الطفل إلى استقلالية تامة فيها`));
+    goals.push(...needsSupport.slice(0, 3).map((s) => `ترسيخ مهارة «${s.skillName}» لتصبح عادة يومية ممتعة ومستقلة`));
   }
 
   let trend: StudentAnalysis["trend"] = "unknown";
@@ -75,19 +89,31 @@ export function analyzeStudent(d: StudentReportData): StudentAnalysis {
     trend = diff > 3 ? "up" : diff < -3 ? "down" : "stable";
   }
 
-  const first = d.student.fullName.split(" ")[0] || "الطفل(ة)";
+  const isFemale = d.student.gender === "F";
+  const name = d.student.fullName.split(" ")[0] || (isFemale ? "صغيرتنا" : "صغيرنا");
   let parentSummary: string;
   if (!results.length) {
-    parentSummary = `لا توجد ملاحظات تقييمية مسجلة لـ ${first} في هذه الفترة بعد.`;
+    parentSummary = `يسعدنا أن نرحب بـ ${name} في بداية رحلته(ا) التربوية والاستكشافية، ونتطلع معاً لمتابعة خطواته(ا) النامية بحب واهتمام.`;
   } else {
-    parentSummary =
-      `خلال الفترة «${d.periodName}»، أظهر(ت) ${first} تفاعلاً طيباً في مجالات الأنشطة المتنوعة (${results.length} مؤشراً نمائياً مقيّماً). ` +
-      (strengths.length ? `وتجلّت استقلاليته(ا) وتميزه(ا) في: ${strengths.slice(0, 3).map((s) => s.skillName).join("، ")}. ` : "") +
-      (notAcquired.length || needsSupport.length
-        ? `ويحظى بالتشجيع والمرافقة الودية في: ${[...notAcquired, ...needsSupport].slice(0, 3).map((s) => s.skillName).join("، ")}. `
-        : "") +
-      (trend === "up" ? "ويُسجَّل تطور ملحوظ في وتيرة النمو والمشاركة مقارنة بالفترة السابقة. " : trend === "down" ? "ويُستحسن تنويع الألعاب التفاعلية في البيت لتشجيع مكتسباته بالتعاون مع المربية. " : "") +
-      "هذا التقرير وصفي إرشادي مستند إلى الملاحظة المباشرة لأنشطة وسلوكيات الطفل اليومية.";
+    const topStrengths = strengths.slice(0, 2).map((s) => s.skillName).join(" و");
+    const needWork = [...notAcquired, ...needsSupport].slice(0, 2).map((s) => s.skillName).join(" و");
+
+    const intro = isFemale
+      ? `تسعدنا مرافقة الغالية ${name} في روضتنا؛ طفلة محبة للاستكشاف ومفعمة بالحيوية والبراءة.`
+      : `يسعدنا مرافقة البطل الصغير ${name} في روضتنا؛ طفل محب للاستكشاف ومفعم بالحيوية والبراءة.`;
+
+    const strengthText = topStrengths
+      ? ` تجلت خطواته${isFemale ? "ا" : ""} الرائعة وثقته${isFemale ? "ا" : ""} بنفسه${isFemale ? "ا" : ""} في: ${topStrengths}.`
+      : ` يخطو خطوات واعدة ومشجعة في التفاعل الإيجابي مع رفاق الفوج وبيئة الروضة.`;
+
+    const supportText = needWork
+      ? ` ونواصل معاً برفق مرافقة مهاراته${isFemale ? "ا" : ""} النامية في: ${needWork}.`
+      : ` ويحقق تطوراً متوازناً يبعث على الارتياح والسرور.`;
+
+    const tip =
+      " نوصي بجلسات حوار دافئة وقراءة القصص المصورة في البيت مع منحه فرصة الاعتماد على نفسه في مهامه اليومية البسيطة.";
+
+    parentSummary = `${intro}${strengthText}${supportText}${tip}`;
   }
 
   return {

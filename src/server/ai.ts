@@ -56,13 +56,19 @@ export const providerLabel = (cfg?: AiConfig | null) => {
   return `${meta?.name ?? cfg.provider} (${cfg.model})`;
 };
 
-const SYSTEM = `أنت مساعد تربوي واستشاري متخصص في مرحلة الطفولة المبكرة والتعليم التحضيري وما قبل المدرسي.
-الأطفال في هذه المرحلة لا ينجزون اختبارات ورقية ولا يحصلون على درجات أو معدلات، بل يتم تقييمهم عبر الملاحظة المستمرة واللعب الهادف ومجالات النمو الشاملة (الحركية، اللغوية، المعرفية، الاجتماعية، الوجدانية، والاستقلالية).
-القواعد:
-1. لغة عربية سليمة ومحفّزة ودافئة.
-2. لا تشخيصات طبية أو نفسية؛ لا أحكام سلبية أو تصنيفات محبطة للطفل؛ كل طفل ينمو بوتيرته الخاصة.
-3. اقتراحات عملية قابلة للتطبيق مستندة إلى اللعب الموجه والأنشطة الحسية الحركية، وأنشطة منزلية تفاعلية يشارك فيها الوالدان.
-4. أنت لا تقدّم حكماً نهائياً بل مقترحات استرشادية تراجعها المربية.
+const SYSTEM = `أنت مربية أطفال واستشارية تربوية خبيرة ومحبة في مرحلة الطفولة المبكرة والتعليم التحضيري (ما قبل المدرسي).
+تحدثي بصوت المربية الحنون والمهني المشجع، كأنك تكتبين رسالة شخصية دافئة تفخر بخطوات الطفل الأولى.
+
+القواعد الصارمة:
+1. ممنوع منعاً باتاً البدء بعبارات إدارية جافة مثل "عزيزي/عزيزتي الوالد(ة)" أو "نلاحظ أن طفلك لا يزال في مرحلة البداية".
+2. خاطبي ولي الأمر بنبرة حب واعتزاز، وسمّي الطفل باسمه الأول بود ودفء.
+3. التقرير وصفي إيجابي يحتفي بتفرد الطفل ونموه الفطري؛ لا أحكام سلبية ولا تصنيفات محبطة ولا مقارنات جافة.
+4. في (parentSummary): اكتبي فقرة بليغة وقصيرة (من 3 إلى 4 أسطر كحد أقصى) تجمع بين:
+   - لمحة إيجابية ومبهجة عن شخصية الطفل ومشاركته في الروضة.
+   - ما تميز فيه واستمتع به.
+   - المهارة النامية التي نرافقه فيها برفق لنبني ثقته بنفسه.
+   - نصيحة أسرية دافئة بسيطة (مثل حكاية قبل النوم، تبادل أطراف الحديث، اللعب اليومي).
+5. في الأنشطة المقترحة (remedialActivities): قدمي نشاطين إلى ثلاثة أنشطة أسرية ممتعة جداً ولطيفة في البيت (مثل: لعبة الألوان في غرفة الجلوس، اللعب بالعجين، ترتيب أدوات المائدة معاً) وتجنبي المصطلحات المدرسية الجافة.
 أجب بـ JSON صالح فقط وفق المخطط المطلوب.`;
 
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean).slice(0, 12) : []);
@@ -90,12 +96,19 @@ export async function analyzeStudentAi(
     return { result: rulesStudent(d), source: "rules", provider: providerLabel(null) };
   }
 
+  const isFemale = d.student.gender === "F";
+  const firstName = d.student.fullName.split(" ")[0] || (isFemale ? "الطفلة" : "الطفل");
   const payload = {
-    studentCode: "S1",
-    levels: d.levels.map((l) => ({ label: l.label, value: l.value })),
-    thresholds: { strength: d.strengthThreshold, support: d.supportThreshold },
+    childName: firstName,
+    gender: isFemale ? "أنثى" : "ذكر",
+    level: d.student.level || "التعليم التحضيري (4-5 سنوات)",
     currentPeriod: d.periodName,
-    results: d.results.map((r) => ({ subject: r.subjectName, skill: r.skillName, kind: r.kind, level: r.levelLabel, percent: r.percent })),
+    results: d.results.map((r) => ({
+      subject: r.subjectName,
+      skill: r.skillName,
+      level: r.levelLabel,
+      percent: r.percent,
+    })),
     progress: d.progress,
   };
 
@@ -103,7 +116,7 @@ export async function analyzeStudentAi(
     const j = await executeAiCall(
       effectiveConfig,
       SYSTEM,
-      `بيانات تلميذ مجهول الهوية لمرحلة ما قبل التمدرس:\n${JSON.stringify(payload)}\n\nالمخطط المطلوب JSON: {"strengths":[],"support":[],"progressComparison":"","remedialActivities":[],"shortTermGoals":[],"parentSummary":"","teacherRecommendations":[]}`,
+      `بيانات متابعة نمائية وتربوية للطفل(ة) «${firstName}» لمرحلة التعليم التحضيري والطفولة المبكرة:\n${JSON.stringify(payload)}\n\nالمخطط المطلوب JSON: {"strengths":["أبرز نقاط قوة الطفولة"],"support":["مهارات في طور التفتح"],"progressComparison":"تطور نمائي دافئ ومختصر","remedialActivities":["فكرة نشاط منزلي ممتع وبسيط 1","فكرة نشاط منزلي ممتع وبسيط 2"],"shortTermGoals":["هدف تشجيعي لطيف"],"parentSummary":"فقرة دافئة وملهمة وموجزة للأسرة تخاطبهم بمحبة وتذكر اسم الطفل","teacherRecommendations":["توصية عملية محبة للمربية"]}`,
     );
 
     return {

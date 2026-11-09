@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Printer, Download, School } from "lucide-react";
+import { Printer, Download, School, Edit3, Check, RotateCcw, Sparkles } from "lucide-react";
 import { StudentAvatar } from "./photo-upload";
 import { EvalCircle, EvalLegend, EvalSummaryCards } from "./eval-circles";
 import { Btn } from "./ui";
@@ -78,6 +78,42 @@ export function StudentReportView({
     return results.filter((r) => r.levelKey !== "acquired").slice(0, 4);
   }, [results]);
 
+  // Generate warm, humane, highly personalized default summary
+  const defaultSummary = React.useMemo(() => {
+    if (aiText?.parentSummary) return aiText.parentSummary;
+    const isFemale = student?.gender === "F";
+    const name = student?.fullName ? student.fullName.split(" ")[0] : (isFemale ? "صغيرتنا" : "صغيرنا");
+    const topStr = strengths.slice(0, 2).map((s) => s.skillName).join(" و");
+    const needStr = supportAreas.slice(0, 2).map((s) => s.skillName).join(" و");
+
+    const intro = isFemale
+      ? `تسعدنا مرافقة الغالية ${name} في روضتنا؛ طفلة مفعمة بالحيوية والبراءة وحب الاكتشاف.`
+      : `يسعدنا مرافقة البطل الصغير ${name} في روضتنا؛ طفل مفعم بالحيوية والبراءة وحب الاكتشاف.`;
+
+    const strPart = topStr
+      ? ` تجلت خطواته${isFemale ? "ا" : ""} الجميلة وثقته${isFemale ? "ا" : ""} بنفسه${isFemale ? "ا" : ""} في: ${topStr}.`
+      : ` يخطو خطوات واعدة ومشجعة في التفاعل الإيجابي مع رفاق الفوج وبيئة الروضة.`;
+
+    const suppPart = needStr
+      ? ` ونواصل معاً برفق مرافقة مهاراته${isFemale ? "ا" : ""} النامية في: ${needStr}.`
+      : ` ويحقق تطوراً متوازناً يبعث على الارتياح والسرور.`;
+
+    const advice =
+      " نوصي بحوارات يومية دافئة وقراءة قصص ما قبل النوم في البيت، مع تشجيعه على مهامه الذاتية البسيطة بحب وفخر.";
+
+    return `${intro}${strPart}${suppPart}${advice}`;
+  }, [aiText?.parentSummary, student?.fullName, student?.gender, strengths, supportAreas]);
+
+  // Customizable pedagogical note state
+  const [customSummary, setCustomSummary] = React.useState(defaultSummary);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editText, setEditText] = React.useState(defaultSummary);
+
+  React.useEffect(() => {
+    setCustomSummary(defaultSummary);
+    setEditText(defaultSummary);
+  }, [defaultSummary]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -85,8 +121,11 @@ export function StudentReportView({
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
-      const q = periodId ? `?periodId=${periodId}` : "";
-      const file = await fetchFile(`/api/reports/student/${studentId}${q}`);
+      const q = new URLSearchParams();
+      if (periodId) q.set("periodId", periodId);
+      if (customSummary) q.set("note", customSummary);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      const file = await fetchFile(`/api/reports/student/${studentId}${qs}`);
       await saveBlob(file);
     } catch (err) {
       alert(err instanceof Error ? err.message : "فشل تحميل ملف PDF");
@@ -101,13 +140,32 @@ export function StudentReportView({
     day: "numeric",
   });
 
+  const isFemale = student?.gender === "F";
+  const name = student?.fullName ? student.fullName.split(" ")[0] : (isFemale ? "صغيرتنا" : "صغيرنا");
+
+  // Inspirational quick presets for teachers
+  const presets = [
+    {
+      label: "🌟 حيوية واستكشاف ومبادرة",
+      text: `يسعدنا مرافقة ${name}؛ طفل مفعم بالحيوية والمبادرة وحب الاستكشاف والتعبير الشفوي. خطواته في التفاعل مع رفاقه رائعة جداً، ونواصل معاً تعزيز تركيزه واستقلاليته عبر اللعب الهادف وحكايات ما قبل النوم.`,
+    },
+    {
+      label: "🌿 هدوء وتركيز وخطوات واعدة",
+      text: `يتميز ${name} بهدوء جميل وملاحظة دقيقة أثناء الأنشطة الحسية والقصصية. خطواته في التعبير والمشاركة في تطور مستمر ومبهج، ونشجعه بحب على إبداء آرائه والتحدث بحرية في البيت والمدرسة.`,
+    },
+    {
+      label: "🎨 خيال وإبداع وتآلف اجتماعي",
+      text: `يبدي ${name} خيالاً واسعاً وشغفاً جميلاً بالألوان والتشكيل والأنشطة التعبيرية. نرافقه بحنان لترسيخ عادات النظام والاستقلالية، وبمزيد من التشجيع الأسري الدافئ ستتفتح مواهبه بثقة وسعادة.`,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       {/* Action Toolbar (hidden on print) */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-slate-200/80 p-3 shadow-2xs print:hidden">
         <div className="flex items-center gap-2">
           <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-          <span className="text-xs font-bold text-slate-700">معاينة التقرير الفردي المخصص للطباعة (A4)</span>
+          <span className="text-xs font-bold text-slate-700">معاينة التقرير التربوي الفردي (A4)</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -266,7 +324,7 @@ export function StudentReportView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
             <div className="rounded-xl bg-emerald-50/50 border border-emerald-100 p-3">
               <div className="text-xs font-bold text-emerald-800 mb-1 flex items-center gap-1.5">
-                <span>🌟 أبرز نقاط القوة والاكتساب</span>
+                <span>🌟 أبرز خطوات القوة والاكتساب</span>
               </div>
               {strengths.length > 0 ? (
                 <ul className="text-[11px] text-emerald-950 font-medium space-y-0.5 list-disc list-inside">
@@ -277,13 +335,13 @@ export function StudentReportView({
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-slate-500">قيد الملاحظة والتطور الأولي.</p>
+                <p className="text-[11px] text-slate-500">بدايات واعدة في مسار الاستكشاف واللعب.</p>
               )}
             </div>
 
             <div className="rounded-xl bg-amber-50/50 border border-amber-100 p-3">
               <div className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5">
-                <span>🎯 مجالات تحتاج إلى تعزيز ومرافقة</span>
+                <span>🎯 مجالات نرافقها برفق ومحبة</span>
               </div>
               {supportAreas.length > 0 ? (
                 <ul className="text-[11px] text-amber-950 font-medium space-y-0.5 list-disc list-inside">
@@ -294,22 +352,87 @@ export function StudentReportView({
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-slate-500">تحقق متوازن في كافة المجالات.</p>
+                <p className="text-[11px] text-slate-500">تحقق متوازن يبعث على السرور والاطمئنان.</p>
               )}
             </div>
           </div>
 
-          {/* 6. AI or Pedagogical Brief Note */}
-          <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3">
-            <div className="text-xs font-bold text-slate-800 mb-1">
-              📝 الخلاصة والتوجيهات التربوية للمعلم والولي:
+          {/* 6. Humane Pedagogical Guidance Note (Editable by Teacher) */}
+          <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5 space-y-2 relative group">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <span>💌 الخلاصة والتوجيهات التربوية (رسالة المربية للأسرة):</span>
+              </div>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="print:hidden flex items-center gap-1 text-[11px] font-bold text-[#0f4c81] hover:underline bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs cursor-pointer"
+                  title="تخصيص رسالة المعلم للطفل"
+                >
+                  <Edit3 size={12} />
+                  <span>تعديل الملاحظة</span>
+                </button>
+              )}
             </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-              {aiText?.parentSummary ||
-                (counts.acquired >= counts.inProgress
-                  ? "يُظهر الطفل تطوراً متواصلاً واستقلالية جيدة في أداء المهارات والأنشطة الموجهة. يُوصى بالاستمرار في تشجيعه عبر اللعب التشاركي وتعزيز مهارات التعبير الشفوي."
-                  : "يحقق الطفل تقدماً مشجعاً مع حاجته إلى المرافقة الهادئة في بعض المهارات الحركية والتواصلية. التكرار والأنشطة المنزلية المعززة يسهمان في ترسيخ هذه المكتسبات.")}
-            </p>
+
+            {isEditing ? (
+              <div className="space-y-2.5 pt-1 print:hidden">
+                <textarea
+                  className="w-full text-xs font-medium text-slate-800 bg-white border border-blue-300 rounded-xl p-3 leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0f4c81] shadow-2xs"
+                  rows={4}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  placeholder="اكتب رسالتك الدافئة للطفل وولي أمره هنا..."
+                />
+
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-500">نماذج تربوية ملهمة بلمسة واحدة:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {presets.map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEditText(p.text)}
+                        className="text-[11px] font-semibold bg-white hover:bg-blue-50 text-slate-700 hover:text-[#0f4c81] border border-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Btn
+                    variant="ghost"
+                    onClick={() => {
+                      setEditText(defaultSummary);
+                      setCustomSummary(defaultSummary);
+                      setIsEditing(false);
+                    }}
+                    className="text-xs"
+                  >
+                    <RotateCcw size={12} />
+                    <span>إعادة للأصل</span>
+                  </Btn>
+                  <Btn
+                    variant="primary"
+                    onClick={() => {
+                      setCustomSummary(editText);
+                      setIsEditing(false);
+                    }}
+                    className="text-xs font-bold"
+                  >
+                    <Check size={14} />
+                    <span>اعتماد الرسالة</span>
+                  </Btn>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-700 leading-relaxed font-medium bg-white/60 p-2.5 rounded-lg border border-slate-100">
+                {customSummary}
+              </p>
+            )}
           </div>
         </div>
 
