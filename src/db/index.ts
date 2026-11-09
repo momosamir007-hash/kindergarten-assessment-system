@@ -55,6 +55,8 @@ function initDb(): NodePgDatabase {
       connectionString: databaseUrl,
     });
   globalForDb.__arenaPool = poolInstance;
+  // Ensure schema migrations in PostgreSQL
+  poolInstance.query("ALTER TABLE students ADD COLUMN IF NOT EXISTS photo text;").catch(() => {});
   const dbInstance = drizzlePg(poolInstance);
   globalForDb.__arenaDb = dbInstance;
   return dbInstance;
