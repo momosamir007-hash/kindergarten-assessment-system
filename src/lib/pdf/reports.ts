@@ -84,23 +84,19 @@ export function renderStudentReport(
 
     const summaryPairs: [string, string][] = [];
     if (strengths.length) {
-      summaryPairs.push(["أبرز نقاط القوة", strengths.map((s) => s.skillName).join("، ")]);
+      summaryPairs.push(["أبرز خطوات الاكتساب", strengths.map((s) => s.skillName).join("، ")]);
     }
     if (support.length) {
-      summaryPairs.push(["مجالات تحتاج إلى دعم", support.map((s) => s.skillName).join("، ")]);
+      summaryPairs.push(["مجالات نرافقها بمحبة", support.map((s) => s.skillName).join("، ")]);
     }
 
     if (summaryPairs.length) {
       pdf.kv(summaryPairs);
     }
 
-    const noteText =
-      d.aiText?.parentSummary ||
-      (acquired >= inProgress
-        ? "يُظهر الطفل تفاعلاً إيجابياً واستقلالية جيدة في إنجاز الأنشطة. يُوصى بمواصلة التحفيز واللعب التشاركي."
-        : "يحقق الطفل تطوراً متواصلاً مع حاجته إلى الدعم والمرافقة في بعض الكفاءات الحركية والتواصلية.");
+    const noteText = d.aiText?.parentSummary || a.parentSummary;
 
-    pdf.text(`الخلاصة والتوجيهات التربوية: ${noteText}`, {
+    pdf.text(`رسالة المربية والتوجيهات: ${noteText}`, {
       size: 7.5,
       bold: false,
       color: pdf.theme.muted,
@@ -111,7 +107,7 @@ export function renderStudentReport(
   if (o.remedial) {
     const acts = d.aiText?.activities?.length ? d.aiText.activities : a.remedial.map((r) => r.activity);
     if (acts.length) {
-      pdf.text("أنشطة مقترحة: " + acts.slice(0, 2).join(" • "), { size: 7.5, color: pdf.theme.muted });
+      pdf.text("أفكار أسرية داعمة في البيت: " + acts.slice(0, 2).join(" • "), { size: 7.5, color: pdf.theme.muted });
       pdf.gap(2);
     }
   }

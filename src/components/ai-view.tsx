@@ -28,13 +28,22 @@ const arr = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
 export function StudentAiView({ c }: { c: Content }): ReactNode {
   return (
     <div>
-      <List title="نقاط القوة" items={arr(c.strengths)} />
-      <List title="مهارات تحتاج إلى دعم" items={arr(c.support)} />
-      {typeof c.progressComparison === "string" && c.progressComparison && <div className="mb-3 text-sm"><b>مقارنة عبر الفترات: </b>{c.progressComparison}</div>}
-      <List title="أنشطة علاجية مقترحة" items={arr(c.remedialActivities)} />
-      <List title="أهداف قصيرة المدى" items={arr(c.shortTermGoals)} />
-      <List title="توصيات للمعلم" items={arr(c.teacherRecommendations)} />
-      {typeof c.parentSummary === "string" && c.parentSummary && <div className="rounded-xl bg-slate-50 p-3 text-sm"><b>ملخص لولي الأمر: </b>{c.parentSummary}</div>}
+      <List title="🌟 أبرز خطوات القوة والاكتساب" items={arr(c.strengths)} />
+      <List title="🌱 مهارات نرافقها برفق ومحبة" items={arr(c.support)} />
+      {typeof c.progressComparison === "string" && c.progressComparison && (
+        <div className="mb-3 text-sm">
+          <b>مسار التطور النمائي: </b>{c.progressComparison}
+        </div>
+      )}
+      <List title="🎲 أفكار وألعاب منزلية ممتعة وداعمة" items={arr(c.remedialActivities)} />
+      <List title="🎯 أهداف تحفيزية قريبة" items={arr(c.shortTermGoals)} />
+      <List title="💡 توجيهات عملية للمربية" items={arr(c.teacherRecommendations)} />
+      {typeof c.parentSummary === "string" && c.parentSummary && (
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs md:text-sm leading-relaxed text-slate-800">
+          <b className="text-[#0f4c81] block mb-1">💌 رسالة المربية للأسرة: </b>
+          {c.parentSummary}
+        </div>
+      )}
     </div>
   );
 }
