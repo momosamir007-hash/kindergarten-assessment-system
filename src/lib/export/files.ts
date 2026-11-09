@@ -121,7 +121,18 @@ export function studentsCsv(list: StudentReportData[]): Uint8Array {
 }
 
 export function studentsJson(list: StudentReportData[]): Uint8Array {
-  const payload = list.map((d) => ({ student: d.student, period: d.periodName, results: d.results, progress: d.progress }));
+  const payload = list.map((d) => ({
+    student: d.student,
+    institution: d.institution,
+    period: d.periodName,
+    periodName: d.periodName,
+    levels: d.levels,
+    results: d.results,
+    progress: d.progress,
+    aiText: d.aiText,
+    strengthThreshold: d.strengthThreshold,
+    supportThreshold: d.supportThreshold,
+  }));
   return new TextEncoder().encode(JSON.stringify({ exportedAt: new Date().toISOString(), count: payload.length, students: payload }, null, 2));
 }
 

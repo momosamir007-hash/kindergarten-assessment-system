@@ -5,7 +5,7 @@ import { Printer, Download, School } from "lucide-react";
 import { StudentAvatar } from "./photo-upload";
 import { EvalCircle, EvalLegend, EvalSummaryCards } from "./eval-circles";
 import { Btn } from "./ui";
-import { fetchFile, printBlob, saveBlob } from "@/lib/client";
+import { fetchFile, saveBlob } from "@/lib/client";
 import type { SkillResult, StudentReportData } from "@/lib/report-types";
 
 export function StudentReportView({
@@ -18,9 +18,30 @@ export function StudentReportView({
   periodId?: string | null;
 }) {
   const [downloading, setDownloading] = React.useState(false);
-  const [printing, setPrinting] = React.useState(false);
 
-  const { student, institution, results, periodName, aiText } = data;
+  const student = data?.student ?? {
+    id: studentId,
+    fullName: "التلميذ",
+    birthDate: null,
+    gender: null,
+    nationalId: null,
+    className: "",
+    level: "التحضيري",
+    notes: "",
+    photo: null,
+  };
+
+  const institution = data?.institution ?? {
+    name: "المؤسسة التربوية",
+    academicYear: "—",
+    city: "",
+    logo: null,
+    signatureLabel: "توقيع وملاحظة المربية / المعلم",
+  };
+
+  const results: SkillResult[] = Array.isArray(data?.results) ? data.results : [];
+  const periodName = data?.periodName || (data as unknown as { period?: string })?.period || "التقييم المستمر";
+  const aiText = data?.aiText;
 
   // Real counts computed from actual data
   const counts = React.useMemo(() => {
@@ -39,10 +60,11 @@ export function StudentReportView({
   const groupedResults = React.useMemo(() => {
     const map = new Map<string, { name: string; kind: string; skills: SkillResult[] }>();
     for (const r of results) {
-      if (!map.has(r.subjectId)) {
-        map.set(r.subjectId, { name: r.subjectName, kind: r.kind, skills: [] });
+      const subId = r.subjectId || r.subjectName || "general";
+      if (!map.has(subId)) {
+        map.set(subId, { name: r.subjectName || "المجال العام", kind: r.kind || "academic", skills: [] });
       }
-      map.get(r.subjectId)!.skills.push(r);
+      map.get(subId)!.skills.push(r);
     }
     return Array.from(map.values());
   }, [results]);
@@ -111,7 +133,7 @@ export function StudentReportView({
           {/* 1. Header Band */}
           <div className="flex items-center justify-between border-b-2 border-[#0f4c81] pb-4">
             <div className="flex items-center gap-3">
-              {institution.logo ? (
+              {institution?.logo ? (
                 <img
                   src={institution.logo}
                   alt="شعار المؤسسة"
@@ -123,9 +145,9 @@ export function StudentReportView({
                 </div>
               )}
               <div>
-                <h2 className="text-base font-black text-slate-900">{institution.name || "المؤسسة التربوية"}</h2>
+                <h2 className="text-base font-black text-slate-900">{institution?.name || "المؤسسة التربوية"}</h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  السنة الدراسية: {institution.academicYear || "—"} {institution.city ? `• ${institution.city}` : ""}
+                  السنة الدراسية: {institution?.academicYear || "—"} {institution?.city ? `• ${institution.city}` : ""}
                 </p>
                 <p className="text-xs font-bold text-[#0f4c81]">
                   الفترة: {periodName || "التقييم المستمر"}
@@ -146,22 +168,22 @@ export function StudentReportView({
           {/* Student Profile Card */}
           <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50/90 border border-slate-200/90 p-4">
             <div className="flex items-center gap-4">
-              <StudentAvatar src={student.photo} alt={student.fullName} size="lg" />
+              <StudentAvatar src={student?.photo} alt={student?.fullName} size="lg" />
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-slate-900">{student.fullName}</h3>
+                <h3 className="text-lg font-black text-slate-900">{student?.fullName}</h3>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 font-medium">
                   <span>
-                    <b>القسم/الفوج:</b> {student.className || "—"}
+                    <b>القسم/الفوج:</b> {student?.className || "—"}
                   </span>
                   <span>
-                    <b>المستوى:</b> {student.level || "التحضيري"}
+                    <b>المستوى:</b> {student?.level || "التحضيري"}
                   </span>
-                  {student.birthDate && (
+                  {student?.birthDate && (
                     <span>
                       <b>تاريخ الميلاد:</b> <span dir="ltr">{student.birthDate}</span>
                     </span>
                   )}
-                  {student.nationalId && (
+                  {student?.nationalId && (
                     <span>
                       <b>رقم التعريف:</b> <span dir="ltr">{student.nationalId}</span>
                     </span>
@@ -205,7 +227,7 @@ export function StudentReportView({
                     <React.Fragment key={gi}>
                       {group.skills.map((skill, si) => (
                         <tr
-                          key={skill.skillId}
+                          key={skill.skillId || `${gi}-${si}`}
                           className={`${
                             si % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                           } hover:bg-blue-50/40 transition-colors`}
@@ -294,7 +316,7 @@ export function StudentReportView({
         {/* 7. Signatures Area */}
         <div className="grid grid-cols-2 gap-8 border-t-2 border-slate-200 pt-3 mt-4 text-xs font-bold text-slate-700">
           <div className="text-center space-y-8">
-            <div>{institution.signatureLabel || "توقيع وملاحظة المربية / المعلم"}</div>
+            <div>{institution?.signatureLabel || "توقيع وملاحظة المربية / المعلم"}</div>
             <div className="border-b border-dashed border-slate-300 w-3/4 mx-auto"></div>
           </div>
           <div className="text-center space-y-8">
@@ -306,4 +328,3 @@ export function StudentReportView({
     </div>
   );
 }
-

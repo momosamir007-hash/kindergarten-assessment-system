@@ -4,7 +4,7 @@ import React from "react";
 import { CheckCircle2, Clock, Eye } from "lucide-react";
 
 export function EvalCircle({
-  levelKey,
+  levelKey = "",
   size = 20,
   showLabel = false,
   className = "",
@@ -14,7 +14,8 @@ export function EvalCircle({
   showLabel?: boolean;
   className?: string;
 }) {
-  if (levelKey === "acquired") {
+  const k = String(levelKey || "").toLowerCase();
+  if (k === "acquired" || k.includes("acq") || k.includes("مكتسب")) {
     return (
       <div className={`inline-flex items-center gap-1.5 ${className}`}>
         <svg
@@ -30,7 +31,7 @@ export function EvalCircle({
     );
   }
 
-  if (levelKey === "in_progress") {
+  if (k === "in_progress" || k.includes("prog") || k.includes("طور")) {
     return (
       <div className={`inline-flex items-center gap-1.5 ${className}`}>
         <svg
